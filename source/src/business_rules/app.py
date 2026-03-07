@@ -135,9 +135,12 @@ def lambda_handler(event, context: DurableContext):
     # Each check conditionally emits an event; none block the approval.
     context.logger.info(f"Validation passed for transaction {txn_id}, running business rules")
     context.parallel(
-        lambda ctx: ctx.step(lambda sc: check_foreign_transaction(sc, detail), name="trigger-foreign-transaction-rule"),
-        lambda ctx: ctx.step(lambda sc: check_conversion_rate(sc, detail), name="trigger-conversion-rate-rule"),
-        lambda ctx: ctx.step(lambda sc: check_merchant_type(sc, detail), name="trigger-merchant-rule"),
+        functions=[
+            lambda ctx: ctx.step(lambda sc: check_foreign_transaction(sc, detail), name="trigger-foreign-transaction-rule"),
+            lambda ctx: ctx.step(lambda sc: check_conversion_rate(sc, detail), name="trigger-conversion-rate-rule"),
+            lambda ctx: ctx.step(lambda sc: check_merchant_type(sc, detail), name="trigger-merchant-rule"),
+        ],
+        name="run-business-rules",
     )
 
     # Step 3: Emit approval event — always reached when validation passes
