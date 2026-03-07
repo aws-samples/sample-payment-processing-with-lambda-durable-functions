@@ -75,7 +75,7 @@ resource "aws_lambda_function" "this" {
   source_code_hash = data.archive_file.this.output_base64sha256
   memory_size      = var.memory_size
   handler          = "app.lambda_handler"
-  runtime          = "python3.11"
+  runtime          = "python3.14"
   tracing_config {
     mode = "Active"
   }
