@@ -274,6 +274,30 @@ module "event-pipes" {
   target_event_source      = "octank.payments.posting.visaIngest"
 }
 
+module "business_rules_lambda" {
+  source       = "./lambda_function"
+  lambda_name  = "business_rules"
+  project_name = "payments"
+  timeout      = 120
+  memory_size  = 2048
+  policies = [
+    {
+      Action = [
+        "events:PutEvents",
+      ]
+      Effect   = "Allow"
+      Resource = module.event_bridge.arn
+    }
+  ]
+  environment_variables = {
+    EVENT_BUS_NAME = var.event_bridge_name
+  }
+  durable_config = {
+    execution_timeout        = 180
+    retention_period_in_days = 7
+  }
+}
+
 module "enrich_lambda" {
   source       = "./lambda_function"
   lambda_name  = "enrich"
