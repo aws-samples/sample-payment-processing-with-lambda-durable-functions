@@ -288,10 +288,18 @@ module "business_rules_lambda" {
       ]
       Effect   = "Allow"
       Resource = module.event_bridge.arn
+    },
+    {
+      Action = [
+        "sns:Publish",
+      ]
+      Effect   = "Allow"
+      Resource = module.sns.arn
     }
   ]
   environment_variables = {
     EVENT_BUS_NAME = var.event_bridge_name
+    SNS_TOPIC_ARN  = module.sns.arn
   }
   durable_config = {
     execution_timeout = 180
