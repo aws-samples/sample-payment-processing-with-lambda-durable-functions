@@ -36,3 +36,5 @@ terraform.rc
 
 # Build output for lambda functions
 **/build/**/*
+__pycache__/
+*.pyc
