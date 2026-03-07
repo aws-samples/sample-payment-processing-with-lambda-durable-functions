@@ -294,8 +294,8 @@ module "business_rules_lambda" {
     EVENT_BUS_NAME = var.event_bridge_name
   }
   durable_config = {
-    execution_timeout        = 180
-    retention_period_in_days = 7
+    execution_timeout = 180
+    retention_period  = 7
   }
 }
 

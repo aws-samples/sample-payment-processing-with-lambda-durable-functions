@@ -73,9 +73,8 @@ variable "destination_resource_arn" {
 variable "durable_config" {
   description = "Durable function configuration. Set to null to disable."
   type = object({
-    execution_timeout        = number
-    retention_period_in_days = number
-    allow_invoke_latest      = optional(bool, false)
+    execution_timeout = number
+    retention_period  = number
   })
   default = null
 }

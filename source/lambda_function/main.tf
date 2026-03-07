@@ -84,9 +84,8 @@ resource "aws_lambda_function" "this" {
   dynamic "durable_config" {
     for_each = var.durable_config != null ? [var.durable_config] : []
     content {
-      execution_timeout        = durable_config.value.execution_timeout
-      retention_period_in_days = durable_config.value.retention_period_in_days
-      allow_invoke_latest      = durable_config.value.allow_invoke_latest
+      execution_timeout = durable_config.value.execution_timeout
+      retention_period  = durable_config.value.retention_period
     }
   }
 
