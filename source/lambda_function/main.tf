@@ -46,7 +46,10 @@ data "archive_file" "this" {
   output_path = "${local.build_dir}/python/${var.lambda_name}.zip"
 
   excludes = [
-    "__pycache__"
+    "__pycache__",
+    ".venv",
+    "test_app.py",
+    "requirements-test.txt",
   ]
 
   depends_on = [
