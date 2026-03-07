@@ -73,6 +73,9 @@ def lambda_handler(event, context: DurableContext):
     detail = event["detail"]
     txn_id = detail.get("systemTraceAuditNumber")
 
+    if EVENT_BUS_NAME is None or SNS_TOPIC_ARN is None:
+        raise EnvironmentError("Missing required environment variables: EVENT_BUS_NAME and/or SNS_TOPIC_ARN")
+
     # Step 1: Validate transaction — fail fast on missing issuing country
     context.logger.info(f"Starting business rules processing for transaction {txn_id}")
     is_valid = context.step(
