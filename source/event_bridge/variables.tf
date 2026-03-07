@@ -57,3 +57,8 @@ variable "kms_key_id" {
   type        = string
   default     = null
 }
+
+variable "business_rules_lambda_arn" {
+  type        = string
+  description = "Qualified ARN (alias) of the business rules durable Lambda function"
+}

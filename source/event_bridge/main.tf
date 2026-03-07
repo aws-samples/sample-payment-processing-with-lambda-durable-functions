@@ -147,6 +147,23 @@ resource "aws_cloudwatch_event_target" "sfn" {
   
 }
 
+resource "aws_cloudwatch_event_target" "business_rules_lambda" {
+  rule           = aws_cloudwatch_event_rule.enriched.name
+  event_bus_name = aws_cloudwatch_event_bus.this.name
+  arn            = var.business_rules_lambda_arn
+  dead_letter_config {
+    arn = aws_sqs_queue.dlq.arn
+  }
+}
+
+resource "aws_lambda_permission" "business_rules" {
+  statement_id  = "AllowExecutionFromCloudWatchEvents"
+  action        = "lambda:InvokeFunction"
+  function_name = var.business_rules_lambda_arn
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.enriched.arn
+}
+
 resource "aws_cloudwatch_event_rule" "foreign" {
   name = "foreign-transactions-posted"
   event_bus_name = aws_cloudwatch_event_bus.this.name
