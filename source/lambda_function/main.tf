@@ -1,5 +1,5 @@
 locals {
-  src_dir            = abspath("${path.root}/src/${var.lambda_name}/")
+  src_dir            = abspath("${path.root}/lambda-src/${var.lambda_name}/")
   build_dir          = abspath("${path.root}/build/${var.lambda_name}/")
   function_name      = "${var.project_name}-${var.lambda_name}"
   log_retention_days = 14
@@ -26,12 +26,7 @@ resource "null_resource" "dependencies" {
   }
 
   provisioner "local-exec" {
-    command = <<EOT
-      rm -rf ${local.build_dir};
-      mkdir -p ${local.build_dir}/python;
-      cp -a ${local.src_dir}/. ${local.build_dir}/python;
-      #cp -a ${local.src_dir}/. ${local.build_dir}/python;
-    EOT
+    command = "rm -rf ${local.build_dir} && mkdir -p ${local.build_dir}/python && cp -r ${local.src_dir}/* ${local.build_dir}/python/"
   }
 
   provisioner "local-exec" {

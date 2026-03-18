@@ -46,12 +46,6 @@ variable "enrich_lambda_arn" {
   description = "Pass the Enrich Lambda arn"
 }
 
-variable "state_machine_arn" {
-  type        = string
-  default     = ""
-  description = "Pass the State Machine arn"
-}
-
 variable "kms_key_id" {
   description = "Pass the ARN of the KMS Key Id for CMK"
   type        = string
