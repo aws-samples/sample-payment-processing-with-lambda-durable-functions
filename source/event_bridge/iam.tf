@@ -1,47 +1,3 @@
-resource "aws_iam_role" "this" {
-  name_prefix        = "posting"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "events.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "put_record" {
-  name_prefix = "posting"
-  policy      = <<-EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "states:StartExecution"
-            ],
-            "Resource": [
-                "${var.state_machine_arn}"
-            ]
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "firehose_posting" {
-  role       = aws_iam_role.this.name
-  policy_arn = aws_iam_policy.put_record.arn
-}
-
 resource "aws_iam_role" "auth_lambda" {
   name = "event_bridge_lambda_role"
   
@@ -118,8 +74,8 @@ resource "aws_iam_role_policy_attachment" "event_bridge_cloudwatch_attachment" {
   role       = aws_iam_role.event_bridge_cloudwatch_role.name
 }
 
-resource "aws_iam_role" "foriegn_role" {
-  name = "foriegn_cloudwatch_role"
+resource "aws_iam_role" "foreign_role" {
+  name = "foreign_cloudwatch_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -135,7 +91,7 @@ resource "aws_iam_role" "foriegn_role" {
   })
 }
 
-resource "aws_iam_policy" "foriegn_cloudwatch_policy" {
+resource "aws_iam_policy" "foreign_cloudwatch_policy" {
   name        = "foreign_cloudwatch_policy"
   description = "Policy for EventBridge to write to CloudWatch Logs"
 
@@ -156,8 +112,8 @@ resource "aws_iam_policy" "foriegn_cloudwatch_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "foreign_cloudwatch_attachment" {
-  policy_arn = aws_iam_policy.foriegn_cloudwatch_policy.arn
-  role       = aws_iam_role.foriegn_role.name
+  policy_arn = aws_iam_policy.foreign_cloudwatch_policy.arn
+  role       = aws_iam_role.foreign_role.name
 }
 
 resource "aws_iam_role" "event_bridge_sqs_role" {

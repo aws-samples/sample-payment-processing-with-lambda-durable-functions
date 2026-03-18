@@ -139,14 +139,6 @@ resource "aws_cloudwatch_event_rule" "enriched" {
   )
 }
 
-resource "aws_cloudwatch_event_target" "sfn" {
-  rule = aws_cloudwatch_event_rule.enriched.name
-  event_bus_name = aws_cloudwatch_event_bus.this.name
-  arn      = var.state_machine_arn
-  role_arn = aws_iam_role.this.arn
-  
-}
-
 resource "aws_cloudwatch_event_target" "business_rules_lambda" {
   rule           = aws_cloudwatch_event_rule.enriched.name
   event_bus_name = aws_cloudwatch_event_bus.this.name
