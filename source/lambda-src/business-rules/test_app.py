@@ -1,4 +1,4 @@
-"""Local tests for the business_rules durable function.
+"""Local tests for the business-rules durable function.
 
 Uses the AWS Durable Execution Testing SDK to run the handler locally
 without deployed resources. Mocks boto3 clients so no AWS calls are made.
