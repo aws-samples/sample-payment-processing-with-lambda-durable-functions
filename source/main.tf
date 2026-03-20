@@ -77,7 +77,7 @@ module "event-pipes" {
 
 module "business_rules_lambda" {
   source       = "./lambda_function"
-  lambda_name  = "business_rules"
+  lambda_name  = "business-rules"
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
