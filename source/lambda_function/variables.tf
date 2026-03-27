@@ -69,3 +69,12 @@ variable "destination_resource_arn" {
   description = "ARN of destination of Lambda function"
   default     = ""
 }
+
+variable "durable_config" {
+  description = "Durable function configuration. Set to null to disable."
+  type = object({
+    execution_timeout = number
+    retention_period  = number
+  })
+  default = null
+}
