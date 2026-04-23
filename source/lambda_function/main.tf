@@ -26,11 +26,13 @@ resource "null_resource" "dependencies" {
   }
 
   provisioner "local-exec" {
-    command = "rm -rf ${local.build_dir} && mkdir -p ${local.build_dir}/python && cp -r ${local.src_dir}/* ${local.build_dir}/python/"
+    command     = "import shutil, os; d=r'${local.build_dir}'; s=r'${local.src_dir}'; shutil.rmtree(d, True); os.makedirs(os.path.join(d,'python'), exist_ok=True); shutil.copytree(s, os.path.join(d,'python'), dirs_exist_ok=True)"
+    interpreter = ["python", "-c"]
   }
 
   provisioner "local-exec" {
-    command = "pip3 install -r ${local.build_dir}/python/requirements.txt -t ${local.build_dir}/python --upgrade --no-cache-dir"
+    command     = "import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', r'${local.build_dir}/python/requirements.txt', '-t', r'${local.build_dir}/python', '--upgrade', '--no-cache-dir'])"
+    interpreter = ["python", "-c"]
   }
 }
 
