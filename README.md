@@ -93,15 +93,18 @@ Validate the business rules logic locally before deploying:
 
 ```bash
 cd lambda-src/business-rules
+python3 -m venv .venv
+source .venv/bin/activate
 pip3 install -r requirements-test.txt
 pytest test_app.py -v
 ```
 
 This runs 10 unit tests covering transaction validation, business rule checks, event schema validation, and misconfiguration handling. All tests use the AWS Durable Execution Testing SDK to run the handler locally without deployed AWS resources.
 
-Return to the source directory:
+Deactivate the virtual environment and return to the source directory:
 
 ```bash
+deactivate
 cd ../../
 ```
 
