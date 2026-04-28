@@ -50,7 +50,6 @@ resource "aws_iam_role_policy" "target" {
           "events:PutEvents",
         ],
         Resource = [
-          #"arn:aws:events:eu-west-1:926516876030:event-bus/default",
           var.eb_arn
         ]
       },
@@ -104,7 +103,6 @@ resource "aws_pipes_pipe" "this" {
   source   = var.stream_arn
   target   = var.eb_arn
   kms_key_identifier = var.kms_key_id
-  #target = "arn:aws:events:eu-west-1:926516876030:event-bus/default"
 
   source_parameters {
     dynamodb_stream_parameters {
@@ -132,7 +130,6 @@ resource "aws_pipes_pipe" "this" {
   }
 
   enrichment = var.lambda_arn
-  #enrichment = "arn:aws:lambda:eu-west-1:926516876030:function:payments-visa-mock"
   enrichment_parameters {
     input_template = <<-EOT
     {

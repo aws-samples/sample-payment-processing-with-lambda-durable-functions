@@ -1,8 +1,16 @@
 locals {
+  is_windows         = dirname("/") == "\\"
   src_dir            = abspath("${path.root}/lambda-src/${var.lambda_name}/")
   build_dir          = abspath("${path.root}/build/${var.lambda_name}/")
   function_name      = "${var.project_name}-${var.lambda_name}"
   log_retention_days = 14
+
+  # Python one-liners used by the build provisioners
+  copy_cmd = "import shutil, os; d=r'${local.build_dir}'; s=r'${local.src_dir}'; shutil.rmtree(d, True); os.makedirs(os.path.join(d,'python'), exist_ok=True); shutil.copytree(s, os.path.join(d,'python'), dirs_exist_ok=True)"
+  pip_cmd  = "import subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', r'${local.build_dir}/python/requirements.txt', '-t', r'${local.build_dir}/python', '--upgrade', '--no-cache-dir'])"
+
+  # On non-Windows, try python3 first then fall back to python
+  shell_python = "$(command -v python3 || command -v python)"
   managed_policies = concat(
     [
       data.aws_iam_policy.aws_xray_write_only_access.arn,
@@ -26,11 +34,13 @@ resource "null_resource" "dependencies" {
   }
 
   provisioner "local-exec" {
-    command = "rm -rf ${local.build_dir} && mkdir -p ${local.build_dir}/python && cp -r ${local.src_dir}/* ${local.build_dir}/python/"
+    command     = local.is_windows ? local.copy_cmd : "${local.shell_python} -c \"${local.copy_cmd}\""
+    interpreter = local.is_windows ? ["python", "-c"] : []
   }
 
   provisioner "local-exec" {
-    command = "pip3 install -r ${local.build_dir}/python/requirements.txt -t ${local.build_dir}/python --upgrade --no-cache-dir"
+    command     = local.is_windows ? local.pip_cmd : "${local.shell_python} -c \"${local.pip_cmd}\""
+    interpreter = local.is_windows ? ["python", "-c"] : []
   }
 }
 
