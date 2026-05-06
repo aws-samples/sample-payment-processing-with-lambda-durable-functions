@@ -3,7 +3,7 @@ locals {
   src_dir            = abspath("${path.root}/lambda-src/${var.lambda_name}/")
   build_dir          = abspath("${path.root}/build/${var.lambda_name}/")
   function_name      = "${var.project_name}-${var.lambda_name}"
-  log_retention_days = 14
+  log_retention_days = 365
 
   # Python one-liners used by the build provisioners
   copy_cmd = "import shutil, os; d=r'${local.build_dir}'; s=r'${local.src_dir}'; shutil.rmtree(d, True); os.makedirs(os.path.join(d,'python'), exist_ok=True); shutil.copytree(s, os.path.join(d,'python'), dirs_exist_ok=True)"
@@ -131,16 +131,6 @@ resource "aws_iam_role" "this" {
       Version = "2012-10-17"
       Statement = flatten(
         [
-          # {
-          #   Action = [
-          #     "ec2:CreateNetworkInterface",
-          #     "ec2:DeleteNetworkInterface",
-          #     "ec2:DescribeInstances",
-          #     "ec2:DescribeNetworkInterfaces"
-          #   ]
-          #   Effect   = "Allow"
-          #   Resource = "*"
-          # },
           {
             Action = [
               "logs:CreateLogStream",
@@ -151,6 +141,16 @@ resource "aws_iam_role" "this" {
               "${aws_cloudwatch_log_group.this.arn}:*"
             ]
           },
+          var.kms_key_arn != null ? [{
+            Action = [
+              "kms:Decrypt",
+              "kms:Encrypt",
+              "kms:GenerateDataKey*",
+              "kms:DescribeKey"
+            ]
+            Effect   = "Allow"
+            Resource = var.kms_key_arn
+          }] : [],
 
           var.policies,
         ]

@@ -102,3 +102,8 @@ variable "deletion_protection_enabled" {
   type        = bool
   default     = false
 }
+
+variable "kms_key_arn" {
+  description = "ARN of the customer-managed KMS key for DynamoDB table encryption"
+  type        = string
+}

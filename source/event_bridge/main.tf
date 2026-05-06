@@ -169,8 +169,8 @@ resource "aws_cloudwatch_event_rule" "foreign" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  name = "/aws/events/ForeignTransactions"
-
+  name              = "/aws/events/ForeignTransactions"
+  retention_in_days = 365
 }
 
 data "aws_iam_policy_document" "cwlogs" {
@@ -215,8 +215,8 @@ resource "aws_cloudwatch_event_rule" "cctran" {
 }
 
 resource "aws_cloudwatch_log_group" "cctran" {
-  name = "/aws/events/CurrencyConversionTransaction"
-
+  name              = "/aws/events/CurrencyConversionTransaction"
+  retention_in_days = 365
 }
 
 data "aws_iam_policy_document" "cwlogs_cctran" {
@@ -261,8 +261,8 @@ resource "aws_cloudwatch_event_rule" "merchant" {
 }
 
 resource "aws_cloudwatch_log_group" "merchant" {
-  name = "WarningMerchantTypeTransaction"
-
+  name              = "WarningMerchantTypeTransaction"
+  retention_in_days = 365
 }
 
 resource "aws_cloudwatch_event_target" "merchant_cw" {
