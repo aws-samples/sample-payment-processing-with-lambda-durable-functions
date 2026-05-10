@@ -72,7 +72,7 @@ resource "aws_iam_role_policy" "kms" {
           "kms:DescribeKey"
         ],
         Resource = [
-          "*"
+          var.kms_key_id
         ]
       },
     ]

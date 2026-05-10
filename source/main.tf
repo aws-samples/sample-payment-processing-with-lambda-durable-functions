@@ -21,11 +21,12 @@ module "mock_lambda" {
   timeout      = 120
   memory_size  = 2048
   policies     = []
+  kms_key_arn  = module.kms.key_arn
 }
 
 module "dynamodb" {
-  source = "./dynamodb"
-
+  source      = "./dynamodb"
+  kms_key_arn = module.kms.key_arn
 }
 
 module "event_bridge" {
@@ -41,8 +42,9 @@ module "event_bridge" {
 }
 
 module "dedup_ddb_table" {
-  source = "./dynamodb"
-  name   = "transaction_dupcheck_log"
+  source      = "./dynamodb"
+  name        = "transaction_dupcheck_log"
+  kms_key_arn = module.kms.key_arn
   attributes = [
     {
       name = "key"
@@ -60,6 +62,7 @@ module "dedup_lambda" {
   timeout      = 120
   memory_size  = 2048
   policies     = []
+  kms_key_arn  = module.kms.key_arn
   environment_variables = {
     WINDOW_DURATION_SECONDS = 300
   }
@@ -81,6 +84,7 @@ module "business_rules_lambda" {
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
+  kms_key_arn  = module.kms.key_arn
   policies = [
     {
       Action = [
@@ -113,6 +117,7 @@ module "enrich_lambda" {
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
+  kms_key_arn  = module.kms.key_arn
   policies = [
     {
       Action = [
@@ -133,6 +138,7 @@ module "posting_lambda" {
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
+  kms_key_arn  = module.kms.key_arn
   policies = [
     {
       Action = [
@@ -206,12 +212,16 @@ module "fx_lambda" {
   timeout      = 120
   memory_size  = 2048
   policies     = []
+  kms_key_arn  = module.kms.key_arn
 }
 
 module "kms" {
   source      = "terraform-aws-modules/kms/aws"
   version     = "~> 1.0"
   description = "Securing SFN and EventBridge with KMS Keys"
+
+  # Key rotation
+  enable_key_rotation = true
 
   # Aliases
   aliases                 = ["realtimepayments"]
@@ -254,6 +264,8 @@ module "kms" {
         },
         Action = [
           "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ]
         Resource = "*",

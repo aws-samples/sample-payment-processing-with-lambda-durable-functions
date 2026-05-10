@@ -78,3 +78,9 @@ variable "durable_config" {
   })
   default = null
 }
+
+variable "kms_key_arn" {
+  description = "ARN of the KMS key for encrypting/decrypting DynamoDB and environment variables"
+  type        = string
+  default     = null
+}
