@@ -14,7 +14,6 @@ locals {
   managed_policies = concat(
     [
       data.aws_iam_policy.aws_xray_write_only_access.arn,
-      data.aws_iam_policy.aws_dynamodb_full_access.arn,
     ],
     var.durable_config != null ? [data.aws_iam_policy.aws_lambda_durable_execution[0].arn] : []
   )
@@ -64,10 +63,6 @@ data "archive_file" "this" {
 
 data "aws_iam_policy" "aws_xray_write_only_access" {
   name = "AWSXrayWriteOnlyAccess"
-}
-
-data "aws_iam_policy" "aws_dynamodb_full_access" {
-  name = "AmazonDynamoDBFullAccess"
 }
 
 data "aws_iam_policy" "aws_lambda_durable_execution" {

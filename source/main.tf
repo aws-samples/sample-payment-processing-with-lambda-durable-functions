@@ -20,8 +20,18 @@ module "mock_lambda" {
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
-  policies     = []
-  kms_key_arn  = module.kms.key_arn
+  policies = [
+    {
+      Action = [
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:BatchWriteItem"
+      ]
+      Effect   = "Allow"
+      Resource = module.dynamodb.arn
+    }
+  ]
+  kms_key_arn = module.kms.key_arn
 }
 
 module "dynamodb" {
@@ -61,8 +71,18 @@ module "dedup_lambda" {
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
-  policies     = []
-  kms_key_arn  = module.kms.key_arn
+  policies = [
+    {
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:Query"
+      ]
+      Effect   = "Allow"
+      Resource = module.dedup_ddb_table.arn
+    }
+  ]
+  kms_key_arn = module.kms.key_arn
   environment_variables = {
     WINDOW_DURATION_SECONDS = 300
   }
@@ -86,6 +106,14 @@ module "business_rules_lambda" {
   memory_size  = 2048
   kms_key_arn  = module.kms.key_arn
   policies = [
+    {
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:Query"
+      ]
+      Effect   = "Allow"
+      Resource = module.dynamodb.arn
+    },
     {
       Action = [
         "events:PutEvents",
@@ -121,6 +149,14 @@ module "enrich_lambda" {
   policies = [
     {
       Action = [
+        "dynamodb:GetItem",
+        "dynamodb:Query"
+      ]
+      Effect   = "Allow"
+      Resource = module.dynamodb.arn
+    },
+    {
+      Action = [
         "events:PutEvents",
       ]
       Effect   = "Allow"
@@ -140,6 +176,16 @@ module "posting_lambda" {
   memory_size  = 2048
   kms_key_arn  = module.kms.key_arn
   policies = [
+    {
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query"
+      ]
+      Effect   = "Allow"
+      Resource = module.dynamodb.arn
+    },
     {
       Action = [
         "sqs:ReceiveMessage",
@@ -211,8 +257,17 @@ module "fx_lambda" {
   project_name = "payments"
   timeout      = 120
   memory_size  = 2048
-  policies     = []
-  kms_key_arn  = module.kms.key_arn
+  policies = [
+    {
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:Query"
+      ]
+      Effect   = "Allow"
+      Resource = module.dynamodb.arn
+    }
+  ]
+  kms_key_arn = module.kms.key_arn
 }
 
 module "kms" {
