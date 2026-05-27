@@ -288,12 +288,44 @@ module "kms" {
     Id      = "default",
     Statement = [
       {
-        Sid    = "Enable IAM User Permissions"
+        Sid    = "AllowKeyAdministration"
         Effect = "Allow"
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         }
-        Action   = "kms:*"
+        Action = [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowDeployerKeyUsage"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/iamadmin"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:GenerateDataKey*",
+          "kms:GenerateDataKeyWithoutPlaintext",
+          "kms:DescribeKey",
+          "kms:ReEncrypt*",
+          "kms:CreateGrant"
+        ]
         Resource = "*"
       },
       {
@@ -309,10 +341,30 @@ module "kms" {
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ]
-        Resource = "*" 
+        Resource = "*",
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       },
       {
-        Sid    = "AllowLambdaRolesToDecrypt",
+        Sid    = "AllowPipesRoleToUseKey",
+        Effect = "Allow",
+        Principal = {
+          AWS = module.event-pipes.role_arn
+        },
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowLambdaRolesToUseKey",
         Effect = "Allow",
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
