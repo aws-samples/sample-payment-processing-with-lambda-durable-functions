@@ -7,7 +7,7 @@ resource "aws_dynamodb_table" "this" {
   read_capacity               = var.read_capacity
   write_capacity              = var.write_capacity
   stream_enabled              = var.stream_enabled
-  stream_view_type            = var.stream_view_type
+  stream_view_type            = var.stream_enabled ? var.stream_view_type : null
   table_class                 = var.table_class
   deletion_protection_enabled = var.deletion_protection_enabled
 

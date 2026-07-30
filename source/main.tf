@@ -217,6 +217,7 @@ module "posting_dlq" {
   project_name = "Posting"
   is_dlq       = true
   name         = "DLQ.fifo"
+  kms_key_arn  = module.kms.key_arn
 }
 
 module "posting_queue" {
@@ -226,6 +227,7 @@ module "posting_queue" {
   dead_letter_queue_arn = module.posting_dlq.arn
   max_receive_count     = 1
   publisher_arns        = [module.event_bridge.posting_rule_arn]
+  kms_key_arn           = module.kms.key_arn
 }
 
 module "posted_dlq" {
@@ -233,6 +235,7 @@ module "posted_dlq" {
   project_name = "Posted"
   is_dlq       = true
   name         = "PostedDLQ.fifo"
+  kms_key_arn  = module.kms.key_arn
 }
 
 module "posted_queue" {
@@ -242,6 +245,7 @@ module "posted_queue" {
   dead_letter_queue_arn = module.posted_dlq.arn
   max_receive_count     = 1
   publisher_arns        = [module.event_bridge.posted_rule_arn]
+  kms_key_arn           = module.kms.key_arn
 }
 
 module "sns" {
@@ -332,7 +336,7 @@ module "kms" {
         Sid    = "AllowEventBridgeAndPipesToUseKey",
         Effect = "Allow",
         Principal = {
-          Service = ["events.amazonaws.com", "pipes.amazonaws.com"]
+          Service = ["events.amazonaws.com", "pipes.amazonaws.com", "sqs.amazonaws.com"]
         },
         Action = [
           "kms:Encrypt",

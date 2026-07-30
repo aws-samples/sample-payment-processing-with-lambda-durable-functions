@@ -12,3 +12,8 @@ output "name" {
   value       = local.function_name
   description = "Lambda function name"
 }
+
+output "role_arn" {
+  value       = aws_iam_role.this.arn
+  description = "IAM role ARN for the Lambda function"
+}

@@ -27,3 +27,15 @@ variable "lambda_arn" {
   description = "ARN of the Lambda"
   default     = ""
 }
+
+variable "function_author_role_arn" {
+  type        = string
+  description = "ARN of the IAM role/user that creates or updates the durable Lambda function (function author). Defaults to iamadmin user."
+  default     = null
+}
+
+variable "durable_operator_role_arn" {
+  type        = string
+  description = "ARN of the IAM role for durable execution operators. Set to null to omit the operator policy statement."
+  default     = null
+}

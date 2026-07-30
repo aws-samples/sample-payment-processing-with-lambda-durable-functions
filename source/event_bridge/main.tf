@@ -70,7 +70,7 @@ resource "aws_sqs_queue" "dlq" {
   name                        = "paymentsdlq"
   fifo_queue                  = false
   content_based_deduplication = false
-  sqs_managed_sse_enabled     = true
+  kms_master_key_id           = var.kms_key_id
 }
 
 resource "aws_cloudwatch_event_rule" "posting" {

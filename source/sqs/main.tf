@@ -12,7 +12,7 @@ resource "aws_sqs_queue" "this" {
   visibility_timeout_seconds = var.visibility_timeout_seconds
   #redrive_policy             = local.redrive_policy
   redrive_policy              = var.is_dlq ? null : local.redrive_policy
-  sqs_managed_sse_enabled     = true
+  kms_master_key_id           = var.kms_key_arn
   fifo_queue                  = true
   content_based_deduplication = true
   policy = length(var.publisher_arns) == 0 ? null : jsonencode({
