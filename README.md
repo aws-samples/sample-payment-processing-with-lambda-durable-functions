@@ -4,14 +4,14 @@ This sample demonstrates how to build a near real-time payment processing pipeli
 
 ## Overview
 
-The solution implements a multi-stage payment processing workflow where a Visa authorization message flows through deduplication, enrichment, business rule evaluation, and settlement posting — each stage decoupled via Amazon EventBridge.
+The solution implements a multi-stage payment processing workflow where a payment authorization message flows through deduplication, enrichment, business rule evaluation, and settlement posting — each stage decoupled via Amazon EventBridge.
 
 The business rules stage uses Lambda Durable Functions to orchestrate transaction validation and parallel business rule checks with automatic checkpointing, exactly-once execution, and failure isolation.
 
 ### Architecture
 
 ```
-Visa Mock → DynamoDB → EventBridge Pipes → Dedup → EventBridge
+Mock Payment → DynamoDB → EventBridge Pipes → Dedup → EventBridge
     → Enrich → EventBridge → Business Rules (Durable) → EventBridge
     → SQS FIFO → Posting
 ```
@@ -20,7 +20,7 @@ Visa Mock → DynamoDB → EventBridge Pipes → Dedup → EventBridge
 
 | Stage | Lambda Function | Description |
 |-------|----------------|-------------|
-| Ingest | `payments-visa-mock` | Reads sample Visa authorization messages from CSV and writes to DynamoDB |
+| Ingest | `payments-visa-mock` | Reads sample payment authorization messages from CSV and writes to DynamoDB |
 | Dedup | `payments-dedup` | Conditional writes to DynamoDB to detect duplicate transactions within a time window |
 | Enrich | `payments-enrich` | Enriches transactions with account details (IBAN, account type, holds, tax category) |
 | Business Rules | `payments-business-rules` | **Durable function** — validates transactions and runs parallel business rule checks |
