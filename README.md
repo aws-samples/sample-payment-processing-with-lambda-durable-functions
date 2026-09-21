@@ -4,14 +4,14 @@ This sample demonstrates how to build a near real-time payment processing pipeli
 
 ## Overview
 
-The solution implements a multi-stage payment processing workflow where a Visa authorization message flows through deduplication, enrichment, business rule evaluation, and settlement posting — each stage decoupled via Amazon EventBridge.
+The solution implements a multi-stage payment processing workflow where a payment authorization message flows through deduplication, enrichment, business rule evaluation, and settlement posting — each stage decoupled via Amazon EventBridge.
 
 The business rules stage uses Lambda Durable Functions to orchestrate transaction validation and parallel business rule checks with automatic checkpointing, exactly-once execution, and failure isolation.
 
 ### Architecture
 
 ```
-Visa Mock → DynamoDB → EventBridge Pipes → Dedup → EventBridge
+Mock Payment → DynamoDB → EventBridge Pipes → Dedup → EventBridge
     → Enrich → EventBridge → Business Rules (Durable) → EventBridge
     → SQS FIFO → Posting
 ```
@@ -20,7 +20,7 @@ Visa Mock → DynamoDB → EventBridge Pipes → Dedup → EventBridge
 
 | Stage | Lambda Function | Description |
 |-------|----------------|-------------|
-| Ingest | `payments-visa-mock` | Reads sample Visa authorization messages from CSV and writes to DynamoDB |
+| Ingest | `payments-visa-mock` | Reads sample payment authorization messages from CSV and writes to DynamoDB |
 | Dedup | `payments-dedup` | Conditional writes to DynamoDB to detect duplicate transactions within a time window |
 | Enrich | `payments-enrich` | Enriches transactions with account details (IBAN, account type, holds, tax category) |
 | Business Rules | `payments-business-rules` | **Durable function** — validates transactions and runs parallel business rule checks |
@@ -35,6 +35,67 @@ The `payments-business-rules` Lambda leverages four core durable function capabi
 - **`context.parallel`** — Executes three independent business rule checks concurrently (foreign transaction, currency conversion, merchant type)
 - **`@durable_execution`** — Decorator that enables the checkpoint-and-replay mechanism
 - **`context.logger`** — Replay-aware logging that emits entries only once, not on every replay
+
+### Encryption with Customer Managed Keys (CMK)
+
+Durable function checkpoints persist execution state — step results, payloads, and callback responses — to durable storage. For payment processing workloads, this data is sensitive. The `payments-business-rules` durable function supports encrypting this checkpointed data with a customer managed key (CMK) from AWS KMS instead of the AWS owned default key.
+
+A CMK gives you three controls:
+
+- You set the key rotation schedule.
+- You restrict decryption access through the key policy, scoped to the Lambda service, the function's execution role, the function author, and (optionally) durable execution operators.
+- You get per-function audit trails of `Decrypt` and `GenerateDataKey` calls in AWS CloudTrail.
+
+A durable execution uses the key it started with for its entire lifetime — changing or removing the key only affects executions that start afterward. Removing decrypt permissions from the key policy pauses in-flight executions at their next checkpoint until access is restored; scheduling key deletion is permanent and makes any execution encrypted with that key unrecoverable, so use the KMS waiting period (7–30 days) and check AWS CloudTrail for `Decrypt` activity before deleting a key.
+
+The CMK and its key policy are provisioned in [`source/durable_kms.tf`](source/durable_kms.tf) using the [`terraform-aws-modules/kms/aws`](https://registry.terraform.io/modules/terraform-aws-modules/kms/aws/latest) module. The key policy grants exactly the AWS KMS actions each principal needs:
+
+| Principal | Actions | Purpose |
+|-----------|---------|---------|
+| Account root | `kms:*` | Standard IAM user permissions for key administration |
+| `lambda.amazonaws.com` | `kms:GenerateDataKey`, `kms:Decrypt` | Lets the Lambda service encrypt/decrypt checkpoint data, scoped to this function via `SourceAccount`, `SourceArn`, and `EncryptionContext` conditions |
+| Function execution role | `kms:Decrypt` | Lets the running function decrypt state to progress an execution |
+| Function author | `kms:DescribeKey`, `kms:GenerateDataKey`, `kms:Decrypt` | Lets Lambda validate the key (symmetric, enabled, correct permissions) during `CreateFunction`/`UpdateFunctionConfiguration` |
+| Durable execution operators (optional) | `kms:Decrypt` | Lets an operator role inspect execution state, only added if `durable_operator_role_arn` is set |
+
+Two Terraform variables control the key policy:
+
+| Variable | Description | Default |
+|----------|--------------|---------|
+| `function_author_role_arn` | ARN of the IAM role/user that creates or updates the durable Lambda function | `arn:aws:iam::<account_id>:user/iamadmin` |
+| `durable_operator_role_arn` | ARN of an IAM role for durable execution operators | `null` (statement omitted) |
+
+> **Terraform limitation:** Terraform does not yet support attaching a KMS CMK directly to a Lambda durable function's encryption configuration. `terraform apply` provisions the key and policy, but you must associate the key with the function manually in the Lambda console (or via AWS CLI) as a follow-up step — see below.
+
+#### Associating the CMK with the durable function
+
+1. Deploy the infrastructure as described in [Getting Started](#getting-started). Note the `durable_kms_key_arn` and `durable_kms_key_alias` outputs.
+2. In the AWS Lambda console, open the `payments-business-rules` function and confirm its **Type** displays **Durable**.
+3. Go to **Configuration → Durable execution**, choose **Edit**, and enable **Customize encryption settings**.
+4. Under **AWS KMS key**, select the key aliased `durable-function-encryption` (the ARN from the `durable_kms_key_arn` output).
+5. Choose **Save**. The durable execution encryption configuration now shows the CMK instead of the default AWS owned key.
+
+Verify the association via AWS CLI:
+
+```bash
+aws lambda get-function-configuration \
+  --function-name payments-business-rules \
+  --query "DurableConfig"
+```
+
+Expected response:
+
+```json
+{
+    "KMSKeyArn": "arn:aws:kms:us-east-2:xxxxxxxxxxxx:key/4e87d4c2-1190-4db4-8b97-46657f83ee00",
+    "RetentionPeriodInDays": 7,
+    "ExecutionTimeout": 180
+}
+```
+
+You can also trace the key usage in AWS CloudTrail. When Lambda validates or updates the CMK on the durable function, it issues dry-run `GenerateDataKey` and `Decrypt` calls that appear in CloudTrail with a `DryRunOperationException` error code — this confirms the key policy permissions are correct and is not an actual error.
+
+For background on the encryption model, see [Encrypting AWS Lambda durable execution data](https://docs.aws.amazon.com/lambda/latest/dg/durable-encryption.html) in the AWS Lambda Developer Guide.
 
 ## Prerequisites
 
@@ -56,6 +117,7 @@ The `payments-business-rules` Lambda leverages four core durable function capabi
 │   ├── main.tf                    # Root Terraform configuration
 │   ├── variables.tf               # Input variables
 │   ├── outputs.tf                 # Terraform outputs
+│   ├── durable_kms.tf             # CMK and key policy for durable function encryption
 │   ├── lambda_function/           # Reusable Lambda module
 │   │   ├── main.tf
 │   │   └── variables.tf
@@ -125,20 +187,26 @@ terraform apply -var="region=us-east-2" --auto-approve
 
 > **Note:** Replace `us-east-2` with your preferred AWS Region. The default region is `eu-west-1` if not specified.
 
-On successful completion, Terraform outputs the DynamoDB stream ARN:
+On successful completion, Terraform outputs the AWS KMS key alias and ARN for the durable function's CMK, along with the DynamoDB stream ARN:
 
 ```
 Apply complete! Resources: N added, 0 changed, 0 destroyed.
 
 Outputs:
-  stream_arn = "arn:aws:dynamodb:us-east-2:xxxxxxxxxxxx:table/visa/stream/..."
+  durable_kms_key_alias = "durable-function-encryption"
+  durable_kms_key_arn   = "arn:aws:kms:us-east-2:xxxxxxxxxxxx:key/4e87d4c2-1190-4db4-8b97-46657f83ee00"
+  stream_arn            = "arn:aws:dynamodb:us-east-2:xxxxxxxxxxxx:table/visa/stream/..."
 ```
 
 ### Step 4: Verify Durable Function Configuration
 
 In the AWS Lambda console, navigate to the `payments-business-rules` function. Confirm that the function **Type** displays as **Durable** and a `durable` alias is configured.
 
-### Step 5: Execute a Test Payment
+### Step 5: Associate the CMK with the Durable Function
+
+Terraform provisions the CMK and its key policy, but attaching the key to the durable function's encryption configuration is a manual, one-time step in the Lambda console (Terraform does not yet support this natively). Follow [Associating the CMK with the durable function](#associating-the-cmk-with-the-durable-function) above, using the `durable_kms_key_arn` output from Step 3.
+
+### Step 6: Execute a Test Payment
 
 Invoke the mock payment function to trigger the end-to-end pipeline:
 
@@ -166,7 +234,7 @@ This triggers the following pipeline:
    - Emits a `TransactionPostingApproved` event on the happy path
 5. EventBridge routes `TransactionPostingApproved` events to an SQS FIFO queue, which triggers the `posting` Lambda for settlement.
 
-### Step 6: Verify Results
+### Step 7: Verify Results
 
 Open Amazon CloudWatch Logs and inspect the log group `/aws/lambda/payments-business-rules`. You should see:
 

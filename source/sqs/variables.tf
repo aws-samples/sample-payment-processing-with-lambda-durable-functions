@@ -37,3 +37,9 @@ variable "publisher_arns" {
   description = "Optional list of ARNs allowed to publish message"
   default     = []
 }
+
+variable "kms_key_arn" {
+  type        = string
+  description = "ARN of the CMK to use for SQS server-side encryption"
+  default     = null
+}
