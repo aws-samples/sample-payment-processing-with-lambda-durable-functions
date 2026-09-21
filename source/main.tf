@@ -319,7 +319,10 @@ module "kms" {
         Sid    = "AllowDeployerKeyUsage"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/iamadmin"
+          AWS = coalesce(
+            var.function_author_role_arn,
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/iamadmin"
+          )
         }
         Action = [
           "kms:Encrypt",
