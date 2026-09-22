@@ -5,6 +5,13 @@ provider "aws" {
 provider "random" {}
 data "aws_caller_identity" "current" {}
 
+# Resolves the deployer to a durable IAM principal ARN for KMS key policies:
+# an assumed-role session becomes its underlying role ARN; an IAM user passes
+# through unchanged. Avoids writing the ephemeral session ARN, which KMS rejects.
+data "aws_iam_session_context" "current" {
+  arn = data.aws_caller_identity.current.arn
+}
+
 locals {
   tags = {
     Name        = "payments"
@@ -321,7 +328,7 @@ module "kms" {
         Principal = {
           AWS = coalesce(
             var.function_author_role_arn,
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/iamadmin"
+            data.aws_iam_session_context.current.issuer_arn
           )
         }
         Action = [
