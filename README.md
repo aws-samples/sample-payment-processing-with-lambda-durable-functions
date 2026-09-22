@@ -71,9 +71,9 @@ Two Terraform variables control the key policy:
 
 1. Deploy the infrastructure as described in [Getting Started](#getting-started). Note the `durable_kms_key_arn` and `durable_kms_key_alias` outputs.
 2. In the AWS Lambda console, open the `payments-business-rules` function and confirm its **Type** displays **Durable**.
-3. Go to **Configuration → Durable execution**, choose **Edit**, and enable **Customize encryption settings**.
-4. Under **AWS KMS key**, select the key aliased `durable-function-encryption` (the ARN from the `durable_kms_key_arn` output).
-5. Choose **Save**. The durable execution encryption configuration now shows the CMK instead of the default AWS owned key.
+3. Open the **Durable executions** tab. In the **Durable configuration** panel, choose **Edit**.
+4. On the **Edit durable configuration settings** page, under **Encryption**, select **Customize encryption settings**.
+5. In the key search box, select the key aliased `durable-function-encryption` (the ARN from the `durable_kms_key_arn` output), then choose **Save**. The **Durable configuration** panel now shows your CMK under **AWS KMS customer managed key ARN** instead of the default AWS owned key.
 
 Verify the association via AWS CLI:
 
