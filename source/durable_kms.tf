@@ -17,10 +17,10 @@ locals {
   durable_function_arn  = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${local.durable_function_name}"
   durable_role_arn      = module.business_rules_lambda.role_arn
 
-  # Function author defaults to the deployer (iamadmin) if not explicitly set
+  # Function author defaults to the deploying principal if not explicitly set
   function_author_arn = coalesce(
     var.function_author_role_arn,
-    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/iamadmin"
+    data.aws_iam_session_context.current.issuer_arn
   )
 
   # Operator role - only included in policy if provided

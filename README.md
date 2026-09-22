@@ -62,7 +62,7 @@ Two Terraform variables control the key policy:
 
 | Variable | Description | Default |
 |----------|--------------|---------|
-| `function_author_role_arn` | ARN of the IAM role/user that creates or updates the durable Lambda function | `arn:aws:iam::<account_id>:user/iamadmin` |
+| `function_author_role_arn` | The IAM principal (role or user) granted function-author permissions in the CMK key policy - the identity Lambda validates the key against when the CMK is associated with the function. Must match whoever performs that association (normally the deployer). Defaults to the principal running `terraform apply`, resolved to the underlying role ARN for an assumed-role/SSO session or the user ARN for an IAM user. Override it to authorize a *different* author. | Deploying principal (auto-resolved via `aws_iam_session_context`) |
 | `durable_operator_role_arn` | ARN of an IAM role for durable execution operators | `null` (statement omitted) |
 
 > **Terraform limitation:** Terraform does not yet support attaching a KMS CMK directly to a Lambda durable function's encryption configuration. `terraform apply` provisions the key and policy, but you must associate the key with the function manually in the Lambda console (or via AWS CLI) as a follow-up step — see below.
